@@ -1,16 +1,21 @@
 package server.database;
 
+import util.Entry;
+import util.Result;
+
 public class DeleteCommand implements Command {
     private Database database;
-    private String[] cmdArr;
+    private Entry entry;
+    private Result result;
 
-    public DeleteCommand(Database database, String[] cmdArr) {
+    public DeleteCommand(Database database, Entry entry, Result result) {
         this.database = database;
-        this.cmdArr = cmdArr;
+        this.entry = entry;
+        this.result = result;
     }
 
     @Override
-    public String execute() {
-        return database.delete(Integer.parseInt(cmdArr[1]));
+    public void execute() {
+        database.delete(entry, result);
     }
 }

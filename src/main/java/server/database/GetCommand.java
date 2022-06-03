@@ -1,16 +1,21 @@
 package server.database;
 
+import util.Entry;
+import util.Result;
+
 public class GetCommand implements Command {
     private Database database;
-    private String[] cmdArr;
+    private Entry entry;
+    private Result result;
 
-    public GetCommand(Database database, String[] cmdArr) {
+    public GetCommand(Database database, Entry entry, Result result) {
         this.database = database;
-        this.cmdArr = cmdArr;
+        this.entry = entry;
+        this.result = result;
     }
 
     @Override
-    public String execute() {
-        return database.get(Integer.parseInt(cmdArr[1]));
+    public void execute() {
+        database.get(entry, result);
     }
 }

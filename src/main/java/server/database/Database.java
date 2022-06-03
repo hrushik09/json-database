@@ -1,49 +1,43 @@
 package server.database;
 
-import java.util.Arrays;
+import util.Entry;
+import util.Result;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Database {
-    private static final String SUCCESS = "OK";
-    private static final String FAILED = "ERROR";
-    private static final int len = 1000;
-    private String[] database;
+    private static final String OK = "OK";
+    private static final String ERROR = "ERROR";
+    private static final String REASON = "No such key";
+    private Map<String, String> map;
 
     public Database() {
-        database = new String[len];
-        Arrays.fill(database, "");
+        map = new HashMap<>();
     }
 
-    public String set(int index, String text) {
-        int recordNum = index - 1;
-        if (isIndexIncorrect(recordNum)) {
-            return FAILED;
+    public void set(Entry entry, Result result) {
+        map.put(entry.getKey(), entry.getValue());
+        result.setResponse(OK);
+    }
+
+    public void get(Entry entry, Result result) {
+        if (map.containsKey(entry.getKey())) {
+            result.setResponse(OK);
+            result.setValue(map.get(entry.getKey()));
+        } else {
+            result.setResponse(ERROR);
+            result.setReason(REASON);
         }
-        database[recordNum] = text;
-        return SUCCESS;
     }
 
-    public String get(int index) {
-        int recordNum = index - 1;
-        if (isCellEmpty(recordNum) || isIndexIncorrect(recordNum)) {
-            return FAILED;
+    public void delete(Entry entry, Result result) {
+        if (map.containsKey(entry.getKey())) {
+            map.remove(entry.getKey());
+            result.setResponse(OK);
+        } else {
+            result.setResponse(ERROR);
+            result.setReason(REASON);
         }
-        return database[recordNum];
-    }
-
-    public String delete(int index) {
-        int recordNum = index - 1;
-        if (isIndexIncorrect(recordNum)) {
-            return FAILED;
-        }
-        database[recordNum] = "";
-        return SUCCESS;
-    }
-
-    private boolean isCellEmpty(int i) {
-        return database[i].equals("");
-    }
-
-    private boolean isIndexIncorrect(int i) {
-        return i < 0 || i > len - 1;
     }
 }

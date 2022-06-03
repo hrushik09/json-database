@@ -1,6 +1,6 @@
 package client;
 
-import client.cliParser.CommandArgs;
+import client.parser.CLIArgsParser;
 import com.beust.jcommander.JCommander;
 
 import java.io.DataInputStream;
@@ -16,17 +16,20 @@ public class Main {
         try (Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
              DataInputStream input = new DataInputStream(socket.getInputStream());
              DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
+
             System.out.println("Client started!");
 
-            CommandArgs commandArgs = new CommandArgs();
+            // Parse command line arguments
+            CLIArgsParser commandArgs = new CLIArgsParser();
             JCommander.newBuilder()
                     .addObject(commandArgs)
                     .build()
                     .parse(args);
 
-            String sentMessage = commandArgs.generateMessage();
-            output.writeUTF(sentMessage);
-            System.out.println("Sent: " + sentMessage);
+            // Get JSON string from command arguments
+            String messageToSend = commandArgs.generateMessage();
+            output.writeUTF(messageToSend);
+            System.out.println("Sent: " + messageToSend);
 
             String receivedMessage = input.readUTF();
             System.out.println("Received: " + receivedMessage);

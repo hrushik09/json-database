@@ -1,6 +1,10 @@
 package server;
 
 import server.database.*;
+import server.parser.JSONTOEntryParser;
+import server.parser.ResultToJSONParser;
+import util.Entry;
+import util.Result;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -23,34 +27,46 @@ public class Main {
                      DataInputStream input = new DataInputStream(socket.getInputStream());
                      DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
+                    // Parse incoming JSON to an object of Entry class
                     String receivedMessage = input.readUTF();
-                    String sentMessage;
-                    if (receivedMessage.equals("exit")) {
-                        sentMessage = "OK";
-                        output.writeUTF(sentMessage);
+                    JSONTOEntryParser jsontoEntryParser = new JSONTOEntryParser(receivedMessage);
+                    Entry entry = jsontoEntryParser.parse();
+
+                    // Handle exit case
+                    if (entry.getType().equals("exit")) {
+                        Result result = new Result();
+                        result.setResponse("OK");
+                        ResultToJSONParser resultToJSONParser = new ResultToJSONParser(result);
+                        output.writeUTF(resultToJSONParser.parse());
                         server.close();
                         break;
                     }
 
-                    String[] cmdArr = getUpdatedInput(receivedMessage);
-                    if (cmdArr == null) {
-                        sentMessage = "Invalid input";
-                        output.writeUTF(sentMessage);
+                    // Handle invalid type
+                    if (!entry.getType().equals("get") && !entry.getType().equals("set") && !entry.getType().equals("delete")) {
+                        Result result = new Result();
+                        result.setResponse("Invalid input");
+                        ResultToJSONParser resultToJSONParser = new ResultToJSONParser(result);
+                        output.writeUTF(resultToJSONParser.parse());
                         continue;
                     }
-                    Command command;
 
-                    switch (cmdArr[0]) {
+                    Command command;
+                    Result result = new Result();
+
+                    // entry contains command parameters
+                    // result will be populated with operation results
+                    switch (entry.getType()) {
                         case "get":
-                            command = new GetCommand(database, cmdArr);
+                            command = new GetCommand(database, entry, result);
                             break;
 
                         case "set":
-                            command = new SetCommand(database, cmdArr);
+                            command = new SetCommand(database, entry, result);
                             break;
 
                         case "delete":
-                            command = new DeleteCommand(database, cmdArr);
+                            command = new DeleteCommand(database, entry, result);
                             break;
 
                         default:
@@ -59,28 +75,15 @@ public class Main {
                     }
 
                     controller.setCommand(command);
-                    sentMessage = controller.executeCommand();
+                    controller.executeCommand();
 
-                    output.writeUTF(sentMessage);
+                    // Serialize result into JSON string
+                    ResultToJSONParser resultToJSONParser = new ResultToJSONParser(result);
+                    output.writeUTF(resultToJSONParser.parse());
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static String[] getUpdatedInput(String input) {
-        String[] arr;
-        if (input.startsWith("get")) {
-            arr = input.split(" ");
-        } else if (input.startsWith("set")) {
-            arr = input.replaceFirst(" ", "#").replaceFirst(" ", "#")
-                    .split("#");
-        } else if (input.startsWith("delete")) {
-            arr = input.split(" ");
-        } else {
-            return null;
-        }
-        return arr;
     }
 }

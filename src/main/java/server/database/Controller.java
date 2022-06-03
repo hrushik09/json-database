@@ -7,7 +7,7 @@ public class Controller {
         this.command = command;
     }
 
-    public String executeCommand() {
-        return command.execute();
+    public void executeCommand() {
+        command.execute();
     }
 }

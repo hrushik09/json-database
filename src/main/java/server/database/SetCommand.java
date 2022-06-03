@@ -1,16 +1,21 @@
 package server.database;
 
+import util.Entry;
+import util.Result;
+
 public class SetCommand implements Command {
     private Database database;
-    private String[] cmdArr;
+    private Entry entry;
+    private Result result;
 
-    public SetCommand(Database database, String[] cmdArr) {
+    public SetCommand(Database database, Entry entry, Result result) {
         this.database = database;
-        this.cmdArr = cmdArr;
+        this.entry = entry;
+        this.result = result;
     }
 
     @Override
-    public String execute() {
-        return database.set(Integer.parseInt(cmdArr[1]), cmdArr[2]);
+    public void execute() {
+        database.set(entry, result);
     }
 }
