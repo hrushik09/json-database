@@ -11,7 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Database {
-    private static final String filePath = "src/server/data/db.json";
+    private static final String filePath = "src/main/java/server/data/db.json";
 
     // boolean flag to track if any key is missing from keyArr
     static boolean keyPresentForDeletion = true;

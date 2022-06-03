@@ -1,4 +1,8 @@
 {
   "type": "delete",
-  "key": "name"
+  "key": [
+    "person",
+    "car",
+    "year"
+  ]
 }

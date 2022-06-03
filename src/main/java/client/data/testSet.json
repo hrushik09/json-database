@@ -1,5 +1,9 @@
 {
   "type": "set",
-  "key": "name",
-  "value": "Kate"
+  "key": [
+    "person",
+    "rocket",
+    "launches"
+  ],
+  "value": "88"
 }

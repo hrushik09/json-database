@@ -32,7 +32,7 @@ public class CLIArgsParser {
     public String generateMessage() {
         if (in != null) {
             try {
-                return Files.readString(Paths.get("src/client/data/" + in));
+                return Files.readString(Paths.get("src/main/java/client/data/" + in));
             } catch (IOException e) {
                 System.out.println("cannot read file " + e.getMessage());
             }

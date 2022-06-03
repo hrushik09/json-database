@@ -1,4 +1,6 @@
 {
   "type": "get",
-  "key": "name"
+  "key": [
+    "person"
+  ]
 }
