@@ -1,110 +1,186 @@
-/**
- * Uses map object to store database temporarily.
- * Reads and writes this map contents to db.json after each operation.
- */
-
 package server.database;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import util.Entry;
-import util.Result;
+import com.google.gson.*;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Path;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Database {
     private static final String filePath = "src/server/data/db.json";
-    private static final String OK = "OK";
-    private static final String ERROR = "ERROR";
-    private static final String REASON = "No such key";
+
+    // boolean flag to track if any key is missing from keyArr
+    static boolean keyPresentForDeletion = true;
 
     // To manage the read and write access to db.json file
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final Lock r = rwl.readLock();
     private final Lock w = rwl.writeLock();
 
-    private Map<String, String> map;
-
-    public Database() {
-        map = new HashMap<>();
-    }
-
-    public void set(Entry entry, Result result) {
-        try {
-            w.lock();
-
-            readFrom();
-            map.put(entry.getKey(), entry.getValue());
-            result.setResponse(OK);
-            writeTo();
-        } finally {
-            w.unlock();
-        }
-    }
-
-    public void get(Entry entry, Result result) {
+    public String get(JsonObject jsonObject) {
+        String s = "";
         try {
             r.lock();
 
-            readFrom();
-            if (map.containsKey(entry.getKey())) {
-                result.setResponse(OK);
-                result.setValue(map.get(entry.getKey()));
+            JsonObject db = readDbFromFile(Path.of(filePath)).getAsJsonObject();
+            JsonArray keyArr;
+            if (jsonObject.get("key").isJsonArray()) {
+                keyArr = jsonObject.get("key").getAsJsonArray();
             } else {
-                result.setResponse(ERROR);
-                result.setReason(REASON);
+                keyArr = getJsonArray(jsonObject.get("key").getAsString());
             }
+
+            JsonElement resultJsonElement = get(db, keyArr, 0);
+
+            if (resultJsonElement != null) {
+                s = "{\"response\":\"OK\",\"value\":" + new Gson().toJson(resultJsonElement) + "}";
+            } else {
+                s = "{\"response\":\"ERROR\",\"reason\":\"No such key\"}";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             r.unlock();
         }
+        return s;
     }
 
-    public void delete(Entry entry, Result result) {
+    private JsonElement get(JsonObject currentJsonObject, JsonArray keyArr, int index) {
+        String currentKey = keyArr.get(index).getAsString();
+
+        if (currentJsonObject.get(currentKey) == null) {
+            return null;
+        }
+
+        if (index == keyArr.size() - 1) {
+            return currentJsonObject.get(currentKey);
+        }
+
+        JsonElement currentJsonValue = currentJsonObject.get(currentKey);
+        return get(currentJsonValue.getAsJsonObject(), keyArr, index + 1);
+    }
+
+    public String set(JsonObject jsonObject) {
+        String s = "";
         try {
             w.lock();
 
-            readFrom();
-            if (map.containsKey(entry.getKey())) {
-                map.remove(entry.getKey());
-                result.setResponse(OK);
+            JsonObject db = readDbFromFile(Path.of(filePath)).getAsJsonObject();
+            JsonArray keyArr;
+            if (jsonObject.get("key").isJsonArray()) {
+                keyArr = jsonObject.get("key").getAsJsonArray();
             } else {
-                result.setResponse(ERROR);
-                result.setReason(REASON);
+                keyArr = getJsonArray(jsonObject.get("key").getAsString());
             }
-            writeTo();
+            JsonElement value = jsonObject.get("value");
+
+            JsonElement resultJsonElement = set(db, value, keyArr, 0);
+
+            writeDbToFile(resultJsonElement, Path.of(filePath));
+            s = "{\"response\":\"OK\"}";
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             w.unlock();
         }
+        return s;
     }
 
-    private void readFrom() {
-        // read current map from db.json
-        try (Reader reader = Files.newBufferedReader(Paths.get(filePath), StandardCharsets.UTF_8)) {
-            Gson gson = new Gson();
-            Type type = new TypeToken<Map<String, String>>(){}.getType();
-            map = gson.fromJson(reader, type);
+    private JsonElement set(JsonObject currentJsonObject, JsonElement value, JsonArray keyArr, int index) {
+        String currentKey = keyArr.get(index).getAsString();
+
+        // when keys are missing
+        if (currentJsonObject.get(currentKey) == null) {
+            currentJsonObject.add(currentKey, new JsonObject());
+        }
+
+        if (index == keyArr.size() - 1) {
+            currentJsonObject.add(currentKey, value);
+            return currentJsonObject;
+        }
+
+        JsonElement currentJsonValue = currentJsonObject.get(currentKey);
+        JsonElement newJsonValue = set(currentJsonValue.getAsJsonObject(), value, keyArr, index + 1);
+        currentJsonObject.add(currentKey, newJsonValue);
+        return currentJsonObject;
+    }
+
+    public String delete(JsonObject jsonObject) {
+        String s = "";
+        try {
+            w.lock();
+
+            JsonObject db = readDbFromFile(Path.of(filePath)).getAsJsonObject();
+            JsonArray keyArr;
+            if (jsonObject.get("key").isJsonArray()) {
+                keyArr = jsonObject.get("key").getAsJsonArray();
+            } else {
+                keyArr = getJsonArray(jsonObject.get("key").getAsString());
+            }
+
+            JsonElement resultJsonElement = delete(db, keyArr, 0);
+            if (keyPresentForDeletion) {
+                s = "{\"response\":\"OK\"}";
+            } else {
+                // no value was deleted
+                // return message will change accordingly
+                s = "{\"response\":\"ERROR\",\"reason\":\"No such key\"}";
+                // set flag back to normal for next call of delete()
+                keyPresentForDeletion = true;
+            }
+            writeDbToFile(resultJsonElement, Path.of(filePath));
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            w.unlock();
+        }
+        return s;
+    }
+
+    private JsonElement delete(JsonObject currentJsonObject, JsonArray keyArr, int index) {
+        String currentKey = keyArr.get(index).getAsString();
+
+        if (currentJsonObject.get(currentKey) == null) {
+            keyPresentForDeletion = false;
+            return currentJsonObject;
+        }
+
+        if (index == keyArr.size() - 1) {
+            currentJsonObject.remove(currentKey);
+            return currentJsonObject;
+        }
+
+        JsonElement currentJsonValue = currentJsonObject.get(currentKey);
+        JsonElement newJsonValue = delete(currentJsonValue.getAsJsonObject(), keyArr, index + 1);
+        currentJsonObject.add(currentKey, newJsonValue);
+        return currentJsonObject;
+    }
+
+    public JsonElement readDbFromFile(Path path) throws IOException {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            return JsonParser.parseReader(reader);
         }
     }
 
-    private void writeTo() {
-        // write current map to db.json
-        try (Writer writer = Files.newBufferedWriter(Paths.get(filePath), StandardCharsets.UTF_8)) {
-            Gson gson = new Gson();
-            gson.toJson(map, writer);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void writeDbToFile(JsonElement db, Path path) throws IOException {
+        try (Writer writer = Files.newBufferedWriter(path)) {
+            new GsonBuilder()
+                    .setPrettyPrinting()
+                    .create()
+                    .toJson(db, writer);
         }
+    }
+
+    private JsonArray getJsonArray(String input) {
+        String[] a = input.split(" ");
+        JsonArray jsonArray = new JsonArray();
+        for (String s : a) {
+            jsonArray.add(s);
+        }
+        return jsonArray;
     }
 }

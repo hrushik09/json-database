@@ -5,11 +5,9 @@
 
 package server;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import server.database.*;
-import server.parser.JSONTOEntryParser;
-import server.parser.ResultToJSONParser;
-import util.Entry;
-import util.Result;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -33,17 +31,14 @@ public class ClientHandler implements Callable<Boolean> {
         try (DataInputStream input = new DataInputStream(socket.getInputStream());
              DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
-            // Parse incoming JSON to an object of Entry class
+            // Parse incoming JSON to JsonObject
             String receivedMessage = input.readUTF();
-            JSONTOEntryParser jsontoEntryParser = new JSONTOEntryParser(receivedMessage);
-            Entry entry = jsontoEntryParser.parse();
+            JsonObject jsonObject = new Gson().fromJson(receivedMessage, JsonObject.class);
 
             // Handle exit case
-            if (entry.getType().equals("exit")) {
-                Result result = new Result();
-                result.setResponse("OK");
-                ResultToJSONParser resultToJSONParser = new ResultToJSONParser(result);
-                output.writeUTF(resultToJSONParser.parse());
+            if (jsonObject.get("type").getAsString().equals("exit")) {
+                String s = "{\"response\":\"OK\"}";
+                output.writeUTF(s);
                 socket.close();
 
                 // need to stop server as "exit" command is invoked
@@ -51,11 +46,11 @@ public class ClientHandler implements Callable<Boolean> {
             }
 
             // Handle invalid type
-            if (!entry.getType().equals("get") && !entry.getType().equals("set") && !entry.getType().equals("delete")) {
-                Result result = new Result();
-                result.setResponse("Invalid input");
-                ResultToJSONParser resultToJSONParser = new ResultToJSONParser(result);
-                output.writeUTF(resultToJSONParser.parse());
+            if (!jsonObject.get("type").getAsString().equals("get")
+                    && !jsonObject.get("type").getAsString().equals("set")
+                    && !jsonObject.get("type").getAsString().equals("delete")) {
+                String s = "{\"response\":\"Invalid input\"}";
+                output.writeUTF(s);
                 socket.close();
 
                 // no need to stop server here
@@ -63,21 +58,17 @@ public class ClientHandler implements Callable<Boolean> {
             }
 
             Command command;
-            Result result = new Result();
-
-            // entry contains command parameters
-            // result will be populated with operation results
-            switch (entry.getType()) {
+            switch (jsonObject.get("type").getAsString()) {
                 case "get":
-                    command = new GetCommand(database, entry, result);
+                    command = new GetCommand(database, jsonObject);
                     break;
 
                 case "set":
-                    command = new SetCommand(database, entry, result);
+                    command = new SetCommand(database, jsonObject);
                     break;
 
                 case "delete":
-                    command = new DeleteCommand(database, entry, result);
+                    command = new DeleteCommand(database, jsonObject);
                     break;
 
                 default:
@@ -87,11 +78,8 @@ public class ClientHandler implements Callable<Boolean> {
 
             // set and execute command
             controller.setCommand(command);
-            controller.executeCommand();
-
-            // Serialize result into JSON string
-            ResultToJSONParser resultToJSONParser = new ResultToJSONParser(result);
-            output.writeUTF(resultToJSONParser.parse());
+            String s = controller.executeCommand();
+            output.writeUTF(s);
 
             // Each client can send only one request
             socket.close();

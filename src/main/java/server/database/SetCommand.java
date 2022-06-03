@@ -1,21 +1,18 @@
 package server.database;
 
-import util.Entry;
-import util.Result;
+import com.google.gson.JsonObject;
 
 public class SetCommand implements Command {
     private final Database database;
-    private final Entry entry;
-    private final Result result;
+    private final JsonObject jsonObject;
 
-    public SetCommand(Database database, Entry entry, Result result) {
+    public SetCommand(Database database, JsonObject jsonObject) {
         this.database = database;
-        this.entry = entry;
-        this.result = result;
+        this.jsonObject = jsonObject;
     }
 
     @Override
-    public void execute() {
-        database.set(entry, result);
+    public String execute() {
+        return database.set(jsonObject);
     }
 }
