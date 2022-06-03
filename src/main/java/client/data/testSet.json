@@ -1,9 +1,17 @@
 {
   "type": "set",
   "key": [
-    "person",
-    "rocket",
-    "launches"
+    "temp1",
+    "temp2",
+    "local",
+    "Java"
   ],
-  "value": "88"
+  "value": {
+    "unique": "Platform independent",
+    "paradigm": [
+      "object oriented",
+      "functional"
+    ],
+    "first appeared": 1995
+  }
 }

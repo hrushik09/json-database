@@ -1,13 +1,71 @@
 {
-  "1": "Hello world!",
-  "person": {
-    "name": "Elon Musk",
-    "car": {
-      "model": "Tesla Roadster"
+  "company": {
+    "Google": {
+      "headquarters": {
+        "city": "Mountain View",
+        "state": "California",
+        "country": "US"
+      },
+      "CEO": "Sundar Pichai",
+      "founders": [
+        "Larry Page",
+        "Sergey Brin"
+      ],
+      "popular products": [
+        "Gmail",
+        "YouTube",
+        "DeepMind"
+      ]
     },
-    "rocket": {
-      "name": "Falcon 9",
-      "launches": "88"
+    "Apple": {
+      "headquarters": {
+        "city": "Cupertino",
+        "state": "California",
+        "country": "US"
+      },
+      "CEO": "Tim Cook",
+      "founders": [
+        "Steve Jobs",
+        "Steve Wozniak",
+        "Ronald Wayne"
+      ],
+      "popular products": [
+        "iPhone",
+        "Apple Watch",
+        "iPad"
+      ]
+    },
+    "Amazon": {
+      "headquarters": {
+        "city": "Seattle",
+        "state": "Washington",
+        "country": "US"
+      },
+      "CEO": "Andy Jassy",
+      "founders": "Jeff Bezos",
+      "popular products": [
+        "amazon.com",
+        "AWS",
+        "Amazon Prime"
+      ]
+    }
+  },
+  "temp1": {
+    "temp2": {
+      "local": {
+        "Java": {
+          "unique": "Platform independent",
+          "paradigm": [
+            "object oriented",
+            "functional"
+          ],
+          "first appeared": 1995
+        },
+        "JavaScript": {},
+        "Python": {},
+        "Scala": {},
+        "Rust": {}
+      }
     }
   }
 }
