@@ -8,7 +8,7 @@ import com.google.gson.Gson;
 import util.Result;
 
 public class ResultToJSONParser {
-    private Result result;
+    private final Result result;
 
     public ResultToJSONParser(Result result) {
         this.result = result;

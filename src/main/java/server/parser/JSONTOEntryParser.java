@@ -8,7 +8,7 @@ import com.google.gson.Gson;
 import util.Entry;
 
 public class JSONTOEntryParser {
-    private String jsonStringToParse;
+    private final String jsonStringToParse;
 
     public JSONTOEntryParser(String jsonStringToParse) {
         this.jsonStringToParse = jsonStringToParse;
