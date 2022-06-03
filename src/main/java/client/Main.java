@@ -1,5 +1,8 @@
 package client;
 
+import client.cliParser.CommandArgs;
+import com.beust.jcommander.JCommander;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,8 +18,13 @@ public class Main {
              DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
             System.out.println("Client started!");
 
-            int n = 24;
-            String sentMessage = String.format("Give me a record # %d", n);
+            CommandArgs commandArgs = new CommandArgs();
+            JCommander.newBuilder()
+                    .addObject(commandArgs)
+                    .build()
+                    .parse(args);
+
+            String sentMessage = commandArgs.generateMessage();
             output.writeUTF(sentMessage);
             System.out.println("Sent: " + sentMessage);
 
