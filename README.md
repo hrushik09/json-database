@@ -3,7 +3,7 @@
 This is a multithreaded server application to store JSON objects. It uses sockets for communication between clients and
 server. All the data is stored in `src\main\java\server\data\db.json`.
 
-- Google Gson API is used for JSON serialization/deserialization.
+- Google Gson library is used for JSON serialization/deserialization.
 - jCommander framework is used to parse command line parameters passed to the client.
 - `ReentrantReadWriteLock` is used to allow multiple readers of the `db.json`
   file but only one writer at any time. Thus, concurrency related errors are avoided.
